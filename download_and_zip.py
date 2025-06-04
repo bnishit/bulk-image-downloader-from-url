@@ -3,13 +3,14 @@ import os
 import requests
 from zipfile import ZipFile
 from pathlib import Path
+from urllib.parse import urlparse
 
 # Placeholder for paths
-file_path = 'path_to_your_csv_file.csv'  # Update with the actual CSV file path
+csv_file_path = 'path_to_your_csv_file.csv'  # Update with the actual CSV file path
 record_file_path = 'downloaded_urls.csv'  # Path to the CSV tracking downloaded URLs
 
 # Load the CSV file
-df = pd.read_csv(file_path)
+df = pd.read_csv(csv_file_path)
 
 # Extract URLs from the 'poster URL' column
 urls = df['poster URL'].dropna().tolist()  # Ensure the CSV file has a column named 'poster URL'
@@ -49,11 +50,12 @@ for i, url in enumerate(corrected_urls):
     if url in downloaded_urls:
         print(f"Already downloaded {url}")
         continue
-    file_extension = os.path.splitext(url)[1]
+    parsed_url_path = urlparse(url).path
+    file_extension = os.path.splitext(parsed_url_path)[1]
     file_name = f"file_{i+1}{file_extension}"
-    file_path = os.path.join(file_dir, file_name)
-    if download_file(url, file_path):
-        file_paths.append(file_path)
+    local_file_path = os.path.join(file_dir, file_name)
+    if download_file(url, local_file_path):
+        file_paths.append(local_file_path)
         new_urls.append(url)
 
 # Update the record of downloaded URLs
