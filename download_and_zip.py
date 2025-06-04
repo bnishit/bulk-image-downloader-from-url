@@ -66,10 +66,12 @@ if new_urls:
     else:
         new_urls_df.to_csv(record_file_path, index=False)
 
-# Create a zip file
+# Create a zip file of all files in the download directory
 zip_file_path = os.path.join(downloads_path, 'files.zip')
 with ZipFile(zip_file_path, 'w') as zipf:
-    for file_path in file_paths:
-        zipf.write(file_path, os.path.basename(file_path))
+    for file_name in os.listdir(file_dir):
+        file_path = os.path.join(file_dir, file_name)
+        if os.path.isfile(file_path):
+            zipf.write(file_path, file_name)
 
 print(f"Files have been downloaded and zipped into {zip_file_path}")
