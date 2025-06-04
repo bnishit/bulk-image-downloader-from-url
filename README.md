@@ -42,7 +42,7 @@ python download_and_zip.py
 
 4. **Output**:
    - The downloaded files will be saved in a `files` directory within your `Downloads` folder.
-   - The script will create a `files.zip` file containing all the downloaded files in your `Downloads` folder.
+   - The script will create a `files.zip` file containing **all files in the `files` directory**, so rerunning the script without new URLs still produces a complete archive.
 
 ## Customization
 
