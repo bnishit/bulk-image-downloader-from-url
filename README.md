@@ -6,7 +6,7 @@ This script downloads files from a list of URLs in a CSV file, saves them locall
 - Downloads files from a list of URLs in a CSV file.
 - Checks for missing URL schemes and corrects them (adds `https://` if needed).
 - Keeps track of already downloaded files using a separate CSV log (`downloaded_urls.csv`).
-- Compresses all downloaded files into a zip file.
+- Compresses all files found in the download directory into a zip file.
 - Supports resuming from where you left off by checking the log file.
 
 ## Prerequisites
@@ -42,7 +42,8 @@ python download_and_zip.py
 
 4. **Output**:
    - The downloaded files will be saved in a `files` directory within your `Downloads` folder.
-   - The script will create a `files.zip` file containing **all files in the `files` directory**, so rerunning the script without new URLs still produces a complete archive.
+   - The script recreates `files.zip` each time it runs, zipping every file in that directory.
+
 
 ## Customization
 

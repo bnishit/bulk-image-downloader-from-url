@@ -66,8 +66,7 @@ if new_urls:
     else:
         new_urls_df.to_csv(record_file_path, index=False)
 
-# Create a zip file containing all files in ``file_dir``
-zip_file_path = os.path.join(downloads_path, 'files.zip')
+# Create a zip file of all files in the download directory
 
 # Collect all existing files in ``file_dir`` to ensure the archive always
 # contains every downloaded file even when the script is rerun without new
@@ -80,7 +79,10 @@ all_existing_files = [
 all_files_to_zip = list(dict.fromkeys(all_existing_files + file_paths))
 
 with ZipFile(zip_file_path, 'w') as zipf:
-    for file_path in all_files_to_zip:
-        zipf.write(file_path, os.path.basename(file_path))
+    for file_name in os.listdir(file_dir):
+        file_path = os.path.join(file_dir, file_name)
+        if os.path.isfile(file_path):
+            zipf.write(file_path, file_name)
+
 
 print(f"Files have been downloaded and zipped into {zip_file_path}")
