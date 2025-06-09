@@ -1,17 +1,16 @@
-import pandas as pd
 import os
+import pandas as pd
 import requests
 from zipfile import ZipFile
 from pathlib import Path
 from urllib.parse import urlparse
+from typing import Iterable, Callable, List
+
 from helpers import ensure_scheme, append_to_log
 
-# Placeholder for paths
-csv_file_path = os.environ.get('CSV_FILE_PATH', 'path_to_your_csv_file.csv')  # Update with the actual CSV file path or set CSV_FILE_PATH env var
-record_file_path = 'downloaded_urls.csv'  # Path to the CSV tracking downloaded URLs
 
 def download_file(url: str, save_path: str) -> bool:
-    """Download a single file."""
+    """Download a single file and save it locally."""
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -24,72 +23,67 @@ def download_file(url: str, save_path: str) -> bool:
         return False
 
 
-def main() -> None:
-    # Load the CSV file
-    df = pd.read_csv(csv_file_path)
-
-    # Extract URLs from the 'poster URL' column
-    urls = df['poster URL'].dropna().tolist()  # Ensure the CSV file has a column named 'poster URL'
-
-    # Correct the URLs by adding the scheme if missing
-    corrected_urls = [ensure_scheme(url) for url in urls]
-
-    # Load the record of downloaded URLs
+def download_files(
+    urls: Iterable[str],
+    download_dir: str,
+    record_file_path: str,
+    progress_callback: Callable[[int, int], None] | None = None,
+) -> List[str]:
+    """Download multiple files and update the record file."""
     if os.path.exists(record_file_path):
         downloaded_df = pd.read_csv(record_file_path)
         downloaded_urls = set(downloaded_df['url'])
     else:
         downloaded_urls = set()
 
-    # Directory to save downloaded files
-    downloads_path = str(Path.home() / 'Downloads')
-    file_dir = os.path.join(downloads_path, 'files')
-    os.makedirs(file_dir, exist_ok=True)
+    os.makedirs(download_dir, exist_ok=True)
+    file_paths: List[str] = []
+    new_urls: List[str] = []
+    total = len(list(urls)) if not isinstance(urls, list) else len(urls)
 
-    # Download all files, only if not already downloaded
-    file_paths = []
-    new_urls = []
-    for i, url in enumerate(corrected_urls):
+    for index, url in enumerate(urls, start=1):
         if url in downloaded_urls:
             print(f"Already downloaded {url}")
+            if progress_callback:
+                progress_callback(index, total)
             continue
         parsed_url_path = urlparse(url).path
-        file_extension = os.path.splitext(parsed_url_path)[1]
-        file_name = f"file_{i+1}{file_extension}"
-        local_file_path = os.path.join(file_dir, file_name)
-        if download_file(url, local_file_path):
-            file_paths.append(local_file_path)
+        extension = os.path.splitext(parsed_url_path)[1] or '.jpg'
+        file_name = f"file_{index}{extension}"
+        local_file = os.path.join(download_dir, file_name)
+        if download_file(url, local_file):
+            file_paths.append(local_file)
             new_urls.append(url)
+        if progress_callback:
+            progress_callback(index, total)
 
-    # Update the record of downloaded URLs
     if new_urls:
         append_to_log(record_file_path, new_urls)
 
-    # Create a zip file
-    zip_file_path = os.path.join(downloads_path, 'files.zip')
+    return file_paths
+
+
+def create_zip(file_paths: Iterable[str], zip_file_path: str) -> None:
+    """Create a zip archive containing all provided file paths."""
     with ZipFile(zip_file_path, 'w') as zipf:
         for file_path in file_paths:
-            zipf.write(file_path, os.path.basename(file_path))
+            if os.path.isfile(file_path):
+                zipf.write(file_path, os.path.basename(file_path))
 
+
+def main() -> None:
+    csv_file_path = os.environ.get('CSV_FILE_PATH', 'path_to_your_csv_file.csv')
+    record_file_path = 'downloaded_urls.csv'
+    downloads_path = str(Path.home() / 'Downloads')
+    file_dir = os.path.join(downloads_path, 'files')
+    zip_file_path = os.path.join(downloads_path, 'files.zip')
+
+    df = pd.read_csv(csv_file_path)
+    urls = [ensure_scheme(u) for u in df['poster URL'].dropna().tolist()]
+
+    file_paths = download_files(urls, file_dir, record_file_path)
+    create_zip(file_paths, zip_file_path)
     print(f"Files have been downloaded and zipped into {zip_file_path}")
-
-# Create a zip file of all files in the download directory
-
-# Collect all existing files in ``file_dir`` to ensure the archive always
-# contains every downloaded file even when the script is rerun without new
-# URLs.
-all_existing_files = [
-    os.path.join(file_dir, f) for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))
-]
-
-# Merge newly downloaded file paths with the existing ones, avoiding duplicates
-all_files_to_zip = list(dict.fromkeys(all_existing_files + file_paths))
-
-with ZipFile(zip_file_path, 'w') as zipf:
-    for file_name in os.listdir(file_dir):
-        file_path = os.path.join(file_dir, file_name)
-        if os.path.isfile(file_path):
-            zipf.write(file_path, file_name)
 
 
 if __name__ == "__main__":
