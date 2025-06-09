@@ -49,3 +49,11 @@ python download_and_zip.py
 
 - You can change the download folder and zip file location by modifying the `downloads_path` and `file_dir` variables.
 - The `record_file_path` keeps track of already downloaded URLs. You can change or reset this log if necessary.
+
+## Testing
+
+Run the automated tests with [pytest](https://docs.pytest.org/):
+
+```bash
+pytest
+```
