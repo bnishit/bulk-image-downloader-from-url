@@ -57,3 +57,18 @@ Run the automated tests with [pytest](https://docs.pytest.org/):
 ```bash
 pytest
 ```
+
+## Web Interface
+
+You can also start a small web server to upload the CSV file and monitor
+download progress.
+
+```bash
+pip install flask
+python web_app.py
+```
+
+Navigate to `http://localhost:5000` in your browser, upload the CSV,
+and wait for the progress indicator to finish. When done, you can
+download the resulting zip file and preview thumbnails directly in the
+browser.
