@@ -6,7 +6,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 # Placeholder for paths
-csv_file_path = 'path_to_your_csv_file.csv'  # Update with the actual CSV file path
+csv_file_path = os.environ.get('CSV_FILE_PATH', 'path_to_your_csv_file.csv')  # Update with the actual CSV file path or set CSV_FILE_PATH env var
 record_file_path = 'downloaded_urls.csv'  # Path to the CSV tracking downloaded URLs
 
 # Load the CSV file
@@ -67,11 +67,22 @@ if new_urls:
         new_urls_df.to_csv(record_file_path, index=False)
 
 # Create a zip file of all files in the download directory
-zip_file_path = os.path.join(downloads_path, 'files.zip')
+
+# Collect all existing files in ``file_dir`` to ensure the archive always
+# contains every downloaded file even when the script is rerun without new
+# URLs.
+all_existing_files = [
+    os.path.join(file_dir, f) for f in os.listdir(file_dir) if os.path.isfile(os.path.join(file_dir, f))
+]
+
+# Merge newly downloaded file paths with the existing ones, avoiding duplicates
+all_files_to_zip = list(dict.fromkeys(all_existing_files + file_paths))
+
 with ZipFile(zip_file_path, 'w') as zipf:
     for file_name in os.listdir(file_dir):
         file_path = os.path.join(file_dir, file_name)
         if os.path.isfile(file_path):
             zipf.write(file_path, file_name)
+
 
 print(f"Files have been downloaded and zipped into {zip_file_path}")

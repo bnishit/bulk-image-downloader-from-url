@@ -44,6 +44,7 @@ python download_and_zip.py
    - The downloaded files will be saved in a `files` directory within your `Downloads` folder.
    - The script recreates `files.zip` each time it runs, zipping every file in that directory.
 
+
 ## Customization
 
 - You can change the download folder and zip file location by modifying the `downloads_path` and `file_dir` variables.
